@@ -87,9 +87,10 @@ const HEAD_CAP_KEYWORDS = [
   "beret",
   "coifless",
   "hoodless",
+  "chaperon",
 ];
 const HEAD_COIF_KEYWORDS = ["coif"];
-const HEAD_HOOD_KEYWORDS = ["hood", "cowl", "chaperon"];
+const HEAD_HOOD_KEYWORDS = ["hood", "cowl"];
 const HEAD_COLLAR_KEYWORDS = ["collar", "gorget"];
 
 const BODY_PLATE_KEYWORDS = [

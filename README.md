@@ -63,6 +63,17 @@ Visit `http://localhost:8000` for the UI and `http://localhost:8000/docs` for th
 
 The script produces ~2.7k catalogue rows and ~2.3k PNG icons under `static/icons/`, falling back to `_missing.png` if the engine uses placeholder art.
 
+
+### Quick refresh & run
+
+```powershell
+py .\scripts\build_wearables.py --game-root "C:\Program Files (x86)\Steam\steamapps\common\KingdomComeDeliverance2"
+.\.venv\Scripts\python.exe -m app.seed
+.\.venv\Scripts\python.exe -m uvicorn app.main:app --reload
+```
+
+If Windows reports that `data\items.db` is in use, close any Python/Uvicorn processes still holding the file, delete it, and rerun the commands above.
+
 ## API quick reference
 
 ```

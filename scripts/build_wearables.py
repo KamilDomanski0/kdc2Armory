@@ -18,7 +18,7 @@ import shutil
 import zipfile
 from collections import OrderedDict
 from pathlib import Path
-from typing import Dict, Iterable, List, Tuple
+from typing import Dict, Iterable, List, Tuple, Set
 import xml.etree.ElementTree as ET
 
 from PIL import Image, UnidentifiedImageError
@@ -111,19 +111,40 @@ TOKEN_PRIORITY_RULES = [
 
 
 def _contains(text: str, keywords: Iterable[str]) -> bool:
-    return any(word in text for word in keywords)
+    separators = "-_/\\'\".,:;()[]{}!?*#+~|`"
+    lower = text.lower()
+    tokens: Set[str] = set(
+        filter(
+            None,
+            re.split(rf"[{re.escape(separators)}\s]+", lower),
+        )
+    )
+    for keyword in keywords:
+        kw = keyword.lower()
+        if " " in kw:
+            if kw in lower:
+                return True
+        elif kw in tokens:
+            return True
+    return False
 
 
 def _extract_identifier_tokens(identifier: str) -> List[str]:
     tokens: List[str] = []
     for part in identifier.split("_"):
-        tokens.extend(re.findall(r"[a-z]+", part.lower()))
+        camel_segments = re.findall(r"[A-Za-z][a-z]*", part)
+        if camel_segments:
+            tokens.extend(seg.lower() for seg in camel_segments)
+        else:
+            tokens.extend(re.findall(r"[a-z]+", part.lower()))
     return tokens
 
 
 def _match_token_priority(token: str) -> Tuple[str | None, str | None]:
+    normalized_token = token.lower()
     for category, subcategory, keywords in TOKEN_PRIORITY_RULES:
-        if _contains(token, keywords):
+        keyword_set = {kw.lower() for kw in keywords}
+        if normalized_token in keyword_set:
             return category, subcategory
     return None, None
 
@@ -161,8 +182,8 @@ def classify_by_name(elem, display_name: str) -> Tuple[str, str]:
         return "head", "collar"
     if _contains(base_text, ["necklace", "amulet", "pendant", "medal", "spectacle", "glass"]):
         return "head", "necklace"
-    if _contains(base_text, ["cap", "hat", "mask", "veil", "circlet", "bonnet", "hoodless"]):
-        return "head", "other"
+    if _contains(base_text, ["cap", "hat", "mask", "veil", "circlet", "bonnet", "hoodless", "chaperon"]):
+        return "head", "cap"
 
     if _contains(base_text, ["ring", "signet", "wedding band"]):
         return "arms", "ring"
