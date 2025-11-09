@@ -1,0 +1,253 @@
+:root {
+  color-scheme: dark;
+  font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  line-height: 1.5;
+  background-color: #0c0c0f;
+  color: #f3f6fb;
+}
+
+body,
+html {
+  margin: 0;
+  padding: 0;
+  min-height: 100%;
+}
+
+.page {
+  padding: 2rem clamp(1rem, 5vw, 3rem) 3rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.hero {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  font-size: 0.75rem;
+  color: #8ab4ff;
+  margin: 0;
+}
+
+.hero h1 {
+  margin: 0.25rem 0;
+  font-size: clamp(1.9rem, 3vw, 2.6rem);
+}
+
+.subtitle {
+  max-width: 560px;
+  color: #c3c8d4;
+}
+
+.stats-note {
+  margin-top: 0.35rem;
+  max-width: 700px;
+  font-size: 0.9rem;
+  color: #a9b3c9;
+}
+
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 260px;
+}
+
+.actions small {
+  color: #a9b3c9;
+}
+
+.actions a {
+  color: #8ab4ff;
+}
+
+.search {
+  padding: 0.75rem 1rem;
+  border-radius: 999px;
+  border: 1px solid #1f2432;
+  background: #0f121b;
+  color: inherit;
+}
+
+.search:focus {
+  outline: 2px solid #3d6ef6;
+  border-color: transparent;
+}
+
+.table-card {
+  background: #11131c;
+  border-radius: 1rem;
+  border: 1px solid #1d2130;
+  padding: 1rem;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.35);
+}
+
+.table-wrapper {
+  overflow-x: auto;
+  max-height: 70vh;
+  position: relative;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.95rem;
+}
+
+thead th {
+  text-align: left;
+  font-weight: 600;
+  color: #94a2c4;
+  padding: 0.5rem;
+  border-bottom: 1px solid #1f2539;
+  position: sticky;
+  top: 0;
+  background: #15182a;
+  z-index: 5;
+}
+
+thead button {
+  background: none;
+  border: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.sort-indicator {
+  font-size: 0.8rem;
+  color: #f2f4ff;
+}
+
+tbody td {
+  padding: 0.65rem 0.5rem;
+  border-bottom: 1px solid #1a1e2e;
+  vertical-align: middle;
+}
+
+tbody tr:hover {
+  background-color: rgba(255, 255, 255, 0.02);
+}
+
+.group-row td {
+  background: #15182a;
+  border-bottom: 1px solid #1f2539;
+}
+
+.group-row:hover {
+  background: none;
+}
+
+.group-toggle {
+  width: 100%;
+  background: none;
+  border: none;
+  color: inherit;
+  font: inherit;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  cursor: pointer;
+  padding: 0.35rem 0;
+  text-transform: capitalize;
+}
+
+.group-toggle .toggle-icon::before {
+  content: "+";
+  display: inline-flex;
+  width: 1.2rem;
+  height: 1.2rem;
+  border-radius: 0.25rem;
+  border: 1px solid #2a3147;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  color: #9fb2ff;
+}
+
+.group-row.expanded .toggle-icon::before {
+  content: "−";
+}
+
+.category-row .group-toggle {
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.subcategory-row .group-toggle {
+  font-size: 0.9rem;
+  color: #9fb2ff;
+  padding-left: 1.5rem;
+}
+
+.variant-row .group-toggle {
+  padding-left: 3rem;
+  font-size: 0.95rem;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.variant-toggle .variant-icon,
+.group-toggle .group-icon {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+  border-radius: 0.3rem;
+  border: 1px solid #20263a;
+  background: #0b0d12;
+}
+
+.subcategory-icon {
+  margin-left: 0.25rem;
+}
+
+.group-count {
+  color: #828cad;
+  font-size: 0.85rem;
+}
+
+.hidden-row {
+  display: none;
+}
+
+.category-row + .subcategory-row td {
+  border-top: none;
+}
+
+.icon-cell img {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+  border-radius: 0.4rem;
+  border: 1px solid #1f2638;
+  background: #0b0d12;
+}
+
+.item-name {
+  font-weight: 600;
+}
+
+.status {
+  margin-top: 0.75rem;
+  color: #8b96b8;
+}
+
+@media (max-width: 700px) {
+  thead th:nth-child(n + 5),
+  tbody td:nth-child(n + 5) {
+    display: none;
+  }
+
+  .group-toggle {
+    font-size: 0.95rem;
+  }
+}

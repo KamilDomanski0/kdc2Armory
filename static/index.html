@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>KCD Armour Catalogue</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <main class="page">
+      <header class="hero">
+        <div>
+          <p class="eyebrow">Kingdom Come: Deliverance Armour & Clothing</p>
+          <h1>Armoury catalogue</h1>
+          <p class="subtitle">
+            Search, filter, and sort armour or clothing pieces stored in the backing SQLite database.
+          </p>
+          <p class="stats-note">
+            Stats shown are the base values pulled from the game files (full condition, no perk/layer modifiers). The in-game UI may display different numbers once bonuses or wear are applied. Only Henry-wearable armour/clothing is listed (quest props, animal gear, and female-only outfits are excluded).
+          </p>
+        </div>
+        <div class="actions">
+          <input
+            id="searchInput"
+            class="search"
+            type="search"
+            placeholder="Search by name, category, or item ID"
+            autocomplete="off"
+          />
+          <small>API endpoint: <a href="/api/items" target="_blank" rel="noreferrer">/api/items</a></small>
+        </div>
+      </header>
+
+      <section class="table-card">
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Icon</th>
+                <th>
+                  <button type="button" data-sort="name">Name</button>
+                </th>
+                <th>
+                  <button type="button" data-sort="stab_defense">Stab</button>
+                </th>
+                <th>
+                  <button type="button" data-sort="slash_defense">Slash</button>
+                </th>
+                <th>
+                  <button type="button" data-sort="blunt_defense">Blunt</button>
+                </th>
+                <th>
+                  <button type="button" data-sort="conspicuousness">Consp.</button>
+                </th>
+                <th>
+                  <button type="button" data-sort="noise">Noise</button>
+                </th>
+                <th>
+                  <button type="button" data-sort="visibility">Visibility</button>
+                </th>
+                <th>
+                  <button type="button" data-sort="charisma">Charisma</button>
+                </th>
+                <th>
+                  <button type="button" data-sort="item_id">Item ID</button>
+                </th>
+                <th>
+                  <span>Alt ID</span>
+                </th>
+              </tr>
+            </thead>
+            <tbody id="itemsBody"></tbody>
+          </table>
+        </div>
+        <p id="statusMessage" class="status"></p>
+      </section>
+    </main>
+
+    <script src="/static/app.js" type="module"></script>
+  </body>
+</html>
