@@ -417,8 +417,8 @@ def collect_wearables(game_root: Path, localization: Dict[str, str]) -> List[Dic
                     elem, display_name
                 )
 
-            alt_id = clothing_name or elem.attrib.get("Name") or uuid
-            alt_group = alt_id
+            display_identifier = clothing_name or elem.attrib.get("Name") or uuid
+            alt_group = display_identifier
             if alt_group:
                 alt_group = re.sub(r"_colorVar_\d+$", "", alt_group)
                 alt_group = re.sub(r"_m\d+(?:_[A-Za-z0-9]+)?$", "", alt_group)
@@ -428,7 +428,8 @@ def collect_wearables(game_root: Path, localization: Dict[str, str]) -> List[Dic
                 "icon": f"/static/icons/{icon_id}.png",
                 "icon_id": icon_id,
                 "name": display_name,
-                "item_id": uuid,
+                # Expose the readable clothing identifier (e.g., Cap05_m07) in item_id.
+                "item_id": display_identifier or uuid,
                 "category": elem.tag,
                 "stab_defense": int(round(stab)),
                 "slash_defense": int(round(slash)),
@@ -439,8 +440,9 @@ def collect_wearables(game_root: Path, localization: Dict[str, str]) -> List[Dic
                 "charisma": round(charisma, 3),
                 "slot_category": slot_category,
                 "slot_subcategory": slot_subcategory,
-                "alt_id": alt_id,
-                "alt_group": alt_group or alt_id,
+                # Keep the UUID accessible in alt_id for console commands / debugging.
+                "alt_id": uuid,
+                "alt_group": alt_group or display_identifier or uuid,
             }
             items[uuid] = record
     sorted_items = sorted(items.values(), key=lambda row: row["name"])

@@ -27,10 +27,14 @@
             id="searchInput"
             class="search"
             type="search"
-            placeholder="Search by name, category, or item ID"
+            placeholder="Search by name, category, item ID, or Alt ID"
             autocomplete="off"
           />
           <small>API endpoint: <a href="/api/items" target="_blank" rel="noreferrer">/api/items</a></small>
+          <label class="filter-toggle" for="hidePlaceholderToggle">
+            <input type="checkbox" id="hidePlaceholderToggle" checked />
+            <span>Hide NPC items</span>
+          </label>
         </div>
       </header>
 

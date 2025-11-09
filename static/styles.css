@@ -67,6 +67,20 @@ html {
   color: #8ab4ff;
 }
 
+.filter-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.9rem;
+  color: #c3c8d4;
+}
+
+.filter-toggle input {
+  width: 1rem;
+  height: 1rem;
+  accent-color: #8ab4ff;
+}
+
 .search {
   padding: 0.75rem 1rem;
   border-radius: 999px;

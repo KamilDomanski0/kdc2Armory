@@ -56,6 +56,9 @@ const DISALLOWED_ICON_SRCS = new Set([
   "trafficCone",
 ]);
 
+const PLACEHOLDER_NAME = "a suspicious bag";
+const PLACEHOLDER_ICON_TOKEN = "trafficcone";
+
 const EXCLUDED_SUBCATEGORIES = new Set(["belt"]);
 const HEAD_HELMET_KEYWORDS = [
   "helm",
@@ -320,14 +323,27 @@ const state = {
   openCategories: new Set(),
   openSubcategories: new Set(),
   openVariants: new Set(),
+  hidePlaceholders: true,
 };
 
 const searchInput = document.getElementById("searchInput");
 const itemsBody = document.getElementById("itemsBody");
 const statusMessage = document.getElementById("statusMessage");
 const sortButtons = document.querySelectorAll("button[data-sort]");
+const hidePlaceholderToggle = document.getElementById(
+  "hidePlaceholderToggle"
+);
 
 let debounceTimer = null;
+
+const isPlaceholderItem = (item) => {
+  const iconPath = (item.icon || "").toLowerCase();
+  const name = (item.name || "").toLowerCase();
+  return (
+    iconPath.includes(PLACEHOLDER_ICON_TOKEN) ||
+    name.includes(PLACEHOLDER_NAME)
+  );
+};
 
 const formatNumber = (value) => (typeof value === "number" ? value : "-");
 
@@ -420,7 +436,21 @@ const renderRows = (items) => {
   itemsBody.innerHTML = "";
   state.items = items;
 
-  const grouped = groupItems(items);
+  let workingItems = [];
+  let hiddenCount = 0;
+  if (state.hidePlaceholders) {
+    items.forEach((item) => {
+      if (isPlaceholderItem(item)) {
+        hiddenCount += 1;
+      } else {
+        workingItems.push(item);
+      }
+    });
+  } else {
+    workingItems = [...items];
+  }
+
+  const grouped = groupItems(workingItems);
   const orderedCategories = [
     ...CATEGORY_ORDER,
     ...Object.keys(grouped).filter((cat) => !CATEGORY_ORDER.includes(cat)),
@@ -543,8 +573,10 @@ const renderRows = (items) => {
           itemRow.appendChild(createValueCell(formatNumber(item.noise)));
           itemRow.appendChild(createValueCell(formatNumber(item.visibility)));
           itemRow.appendChild(createValueCell(formatNumber(item.charisma)));
-          itemRow.appendChild(createValueCell(item.alt_id, "alt-id"));
+          // Render true item IDs (UUIDs) before alternative asset IDs to keep the table header correct
+          // and ensure copying the "Item ID" value lines up with the backend search implementation.
           itemRow.appendChild(createValueCell(item.item_id, "item-code"));
+          itemRow.appendChild(createValueCell(item.alt_id, "alt-id"));
 
           itemsBody.appendChild(itemRow);
         });
@@ -552,9 +584,15 @@ const renderRows = (items) => {
     });
   });
 
-  statusMessage.textContent = items.length
-    ? `${items.length} item(s) loaded`
-    : "No items found. Try a different search.";
+  if (!items.length) {
+    statusMessage.textContent = "No items found. Try a different search.";
+  } else {
+    const parts = [`${workingItems.length} item(s) loaded`];
+    if (state.hidePlaceholders && hiddenCount > 0) {
+      parts.push(`${hiddenCount} hidden`);
+    }
+    statusMessage.textContent = parts.join(", ");
+  }
 };
 
 const updateSortIndicators = () => {
@@ -622,6 +660,14 @@ sortButtons.forEach((button) => {
     fetchItems(false);
   });
 });
+
+if (hidePlaceholderToggle) {
+  hidePlaceholderToggle.checked = state.hidePlaceholders;
+  hidePlaceholderToggle.addEventListener("change", (event) => {
+    state.hidePlaceholders = event.target.checked;
+    renderRows(state.items);
+  });
+}
 
 updateSortIndicators();
 fetchItems(true);

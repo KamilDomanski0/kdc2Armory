@@ -73,6 +73,7 @@ def list_items(
             or_(
                 func.lower(Item.name).like(like),
                 func.lower(Item.item_id).like(like),
+                func.lower(Item.alt_id).like(like),
                 func.lower(Item.category).like(like),
             )
         )
