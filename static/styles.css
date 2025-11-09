@@ -20,11 +20,32 @@ html {
 }
 
 .hero {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  gap: 1.5rem;
+  width: 100%;
   margin-bottom: 2rem;
+}
+
+.hero-copy {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  text-align: center;
+}
+
+.hero-logo {
+  width: 96px;
+  height: 96px;
+  border-radius: 0.5rem;
+  object-fit: cover;
+  display: block;
+  margin: 0 auto 1rem;
+}
+
+.hero-card {
+  background: #11131c;
+  border-radius: 1rem;
+  border: 1px solid #1d2130;
+  padding: 1.5rem;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.35);
 }
 
 .eyebrow {
@@ -41,29 +62,38 @@ html {
 }
 
 .subtitle {
-  max-width: 560px;
+  max-width: none;
   color: #c3c8d4;
 }
 
 .stats-note {
   margin-top: 0.35rem;
-  max-width: 700px;
+  max-width: none;
   font-size: 0.9rem;
   color: #a9b3c9;
 }
 
-.actions {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  min-width: 260px;
+.hero-search {
+  margin-top: 1.5rem;
+  width: 100%;
 }
 
-.actions small {
+.hero-search .search {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+}
+
+.hero-search-meta {
+  margin-top: 0.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem;
   color: #a9b3c9;
 }
 
-.actions a {
+.hero-search-meta a {
   color: #8ab4ff;
 }
 

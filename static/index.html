@@ -3,14 +3,16 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>KCD Armour Catalogue</title>
+    <title>KCD2 Armour Catalogue</title>
+    <link rel="icon" type="image/png" href="/static/logo.png" />
     <link rel="stylesheet" href="/static/styles.css" />
   </head>
   <body>
     <main class="page">
       <header class="hero">
-        <div>
-          <p class="eyebrow">Kingdom Come: Deliverance Armour & Clothing</p>
+        <div class="hero-copy hero-card">
+          <img src="/static/logo.png" alt="KCD Armour Catalogue crest" class="hero-logo" />
+          <p class="eyebrow">Kingdom Come: Deliverance 2 Armour & Clothing</p>
           <h1>Armoury catalogue</h1>
           <p class="subtitle">
             Search, filter, and sort armour or clothing pieces stored in the backing SQLite database.
@@ -19,22 +21,24 @@
             Stats shown are the base values pulled from the game files (full condition, no perk/layer modifiers). The in-game UI may display different numbers once bonuses or wear are applied. Only Henry-wearable armour/clothing is listed (quest props, animal gear, and female-only outfits are excluded).
           </p>
           <p class="stats-note">
-            The catalogue surfaces every wearable entry found in the game's data (including NPC-only garments), so a few pieces may not rig or animate perfectly on Henry’s model.
+            The catalogue surfaces every wearable entry found in the game's data (including NPC-only garments), so a few pieces may not rig or animate perfectly on Henry's model. Those items are hidden by default with "Hide NPC items"
           </p>
-        </div>
-        <div class="actions">
-          <input
-            id="searchInput"
-            class="search"
-            type="search"
-            placeholder="Search by name, category, item ID, or Alt ID"
-            autocomplete="off"
-          />
-          <small>API endpoint: <a href="/api/items" target="_blank" rel="noreferrer">/api/items</a></small>
-          <label class="filter-toggle" for="hidePlaceholderToggle">
-            <input type="checkbox" id="hidePlaceholderToggle" checked />
-            <span>Hide NPC items</span>
-          </label>
+          <div class="hero-search">
+            <input
+              id="searchInput"
+              class="search"
+              type="search"
+              placeholder="Search by name, category, or item ID"
+              autocomplete="off"
+            />
+            <div class="hero-search-meta">
+              <small>API endpoint: <a href="/api/items" target="_blank" rel="noreferrer">/api/items</a></small>
+              <label class="filter-toggle" for="hidePlaceholderToggle">
+                <input type="checkbox" id="hidePlaceholderToggle" checked />
+                <span>Hide NPC items</span>
+              </label>
+            </div>
+          </div>
         </div>
       </header>
 
