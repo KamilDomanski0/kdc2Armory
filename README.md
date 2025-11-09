@@ -2,11 +2,11 @@
 
 FastAPI service backed by SQLite that exposes every wearable item from Kingdom Come: Deliverance II through:
 
-- `/api/items` — searchable JSON feed (filters + sortable columns for icon, name, item UUID, alternative ID, stab/slash/blunt defence, conspicuousness, noise, visibility, charisma).
-- `/` — lightweight front-end with a search bar, sortable headers, and locally served in-game icons.
+- /api/items - searchable JSON feed (filters + sortable columns for icon, name, item UUID, alternative ID, stab/slash/blunt defence, conspicuousness, noise, visibility, charisma, quest flag).
+- / - lightweight front-end with a search bar, sortable headers, filter toggles, and locally served in-game icons.
 - The UI groups results into collapsible head/body/arms/legs buckets (with per-slot subcategories) and keeps column headers sticky while scrolling large lists. Within each subcategory, items are further grouped into variant sets (sharing the same alternative ID/clothing asset) with their own expandable sections.
-- **Stat note:** values come straight from `item.xml` (i.e., base stats at 100 % condition, without perk/layer/quality modifiers). The numbers shown inside the game’s inventory can differ because the engine applies condition scaling, layering multipliers, and perk bonuses at runtime.
-- Only human-wearable items are included; horse tack, animal gear, female-only clothing (prefixed `F_`), and quest-only props are filtered out to keep the dataset aligned with Henry’s wardrobe.
+- **Stat note:** values come straight from item.xml (i.e., base stats at 100% condition, without perk/layer/quality modifiers). The numbers shown inside the game UI can differ because the engine applies condition scaling, layering multipliers, and perk bonuses at runtime.
+- Only human-wearable items are included; horse tack, animal gear, and female-only clothing (prefixed F_) are filtered out. NPC-only outfits and quest rewards are included for completeness, but both categories can be hidden via the default-on toggles in the UI.
 
 All data and artwork are extracted directly from your installed game files so the catalogue always mirrors the current build.
 
@@ -61,7 +61,7 @@ Visit `http://localhost:8000` for the UI and `http://localhost:8000/docs` for th
    python -m app.seed
    ```
 
-The script produces ~2.7k catalogue rows and ~2.3k PNG icons under `static/icons/`, falling back to `_missing.png` if the engine uses placeholder art. Because every wearable entry extracted from the game files (including NPC-only outfits) is listed, some pieces may not rig or animate correctly on Henry's player model.
+The script produces ~2.7k catalogue rows and ~2.3k PNG icons under `static/icons/`, falling back to `_missing.png` if the engine uses placeholder art. Because every wearable entry extracted from the game files (including NPC-only outfits and quest rewards) is listed, some pieces may not rig or animate correctly on Henry's player model. The UI therefore exposes **Hide NPC items** and **Hide quest items** toggles (both enabled by default) so you can filter the list down to practical gear quickly.
 
 
 ### Quick refresh & run

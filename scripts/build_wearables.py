@@ -31,7 +31,7 @@ DEFAULT_GAME_ROOT = Path(
     r"C:\Program Files (x86)\Steam\steamapps\common\KingdomComeDeliverance2"
 )
 
-ITEM_FILES = [
+DEFAULT_ITEM_FILES = [
     Path("Data/Tables/Libs/Tables/item/item.xml"),
     Path("Data/Tables/Libs/Tables/item/item__unique.xml"),
 ]
@@ -49,16 +49,36 @@ ICON_PREFIX = "Libs/UI/Textures/Icons/Items/"
 PLACEHOLDER_ICON = "_missing.png"
 
 WEARABLE_TAGS = {"Armor", "Helmet", "Hood"}
-NON_HUMAN_PART_KEYWORDS = (
-    "horse",
-    "dog",
-    "cattle",
-    "sheep",
-    "hare",
-    "animal",
-    "cow",
-    "pig",
-)
+WORD_PATTERN = re.compile(r"[A-Za-z']+")
+WEARABLE_CONTENT_TOKENS = ("<Armor", "<Helmet", "<Hood", "Clothing=\"", "Clothing='")
+
+
+def discover_item_files(game_root: Path) -> List[Path]:
+    """Return relative XML paths that likely contain wearable data."""
+    candidates: Set[Path] = set(DEFAULT_ITEM_FILES)
+    tables_dir = game_root / "Data" / "Tables"
+    if tables_dir.exists():
+        for xml_path in tables_dir.rglob("*.xml"):
+            found = False
+            try:
+                with xml_path.open("r", encoding="utf-8", errors="ignore") as handle:
+                    while True:
+                        chunk = handle.read(8192)
+                        if not chunk:
+                            break
+                        if any(token in chunk for token in WEARABLE_CONTENT_TOKENS):
+                            found = True
+                            break
+            except OSError:
+                continue
+            if found:
+                try:
+                    relative = xml_path.relative_to(game_root)
+                except ValueError:
+                    relative = xml_path
+                candidates.add(relative)
+    return sorted(candidates)
+WORD_PATTERN = re.compile(r"[A-Za-z']+")
 
 SLOT_CATEGORY_MAP = {
     "Coif": ("head", "coif"),
@@ -117,21 +137,19 @@ TOKEN_PRIORITY_RULES = [
 ]
 
 
+def extract_words(text: str) -> Set[str]:
+    return set(WORD_PATTERN.findall(text.lower()))
+
+
 def _contains(text: str, keywords: Iterable[str]) -> bool:
-    separators = "-_/\\'\".,:;()[]{}!?*#+~|`"
     lower = text.lower()
-    tokens: Set[str] = set(
-        filter(
-            None,
-            re.split(rf"[{re.escape(separators)}\s]+", lower),
-        )
-    )
+    words = extract_words(lower)
     for keyword in keywords:
         kw = keyword.lower()
         if " " in kw:
-            if kw in lower:
+            if re.search(rf"\b{re.escape(kw)}\b", lower):
                 return True
-        elif kw in tokens:
+        elif kw in words:
             return True
     return False
 
@@ -331,19 +349,25 @@ def clamp_non_negative(value: float) -> float:
     return value if value >= 0 else 0.0
 
 
-def collect_wearables(game_root: Path, localization: Dict[str, str]) -> List[Dict]:
+def collect_wearables(
+    game_root: Path, localization: Dict[str, str], item_files: List[Path]
+) -> List[Dict]:
     clothing_metadata = load_clothing_metadata(game_root)
     armor_type_slots = load_armor_type_slots(game_root)
     items: Dict[str, Dict] = OrderedDict()
-    for relative in ITEM_FILES:
+    for relative in item_files:
         xml_path = game_root / relative
-        tree = ET.parse(xml_path)
+        if not xml_path.exists():
+            continue
+        try:
+            tree = ET.parse(xml_path)
+        except ET.ParseError:
+            continue
         root = tree.getroot()
         for elem in root.iter():
             if elem.tag not in WEARABLE_TAGS:
                 continue
-            if elem.attrib.get("IsQuestItem", "").lower() == "true":
-                continue
+            is_quest_item = elem.attrib.get("IsQuestItem", "").lower() == "true"
             icon_id = elem.attrib.get("IconId")
             if not icon_id:
                 continue
@@ -371,14 +395,16 @@ def collect_wearables(game_root: Path, localization: Dict[str, str]) -> List[Dic
                 lowered = clothing_name.lower()
                 if "caparison" in lowered or "chanfron" in lowered:
                     continue
-                first_segment = clothing_name.split("_")[0]
-                first_identifier = re.sub(r"\d+$", "", first_segment) or first_segment
-                identifier_tokens = _extract_identifier_tokens(first_identifier)
+                segments = [seg for seg in clothing_name.split("_") if seg]
+                normalized_segments = [
+                    re.sub(r"\d+$", "", segment) or segment for segment in segments
+                ]
+                if normalized_segments:
+                    first_identifier = normalized_segments[0]
+                for segment in normalized_segments:
+                    identifier_tokens.extend(_extract_identifier_tokens(segment))
             equipment_part = clothing_info.get("equipment_part")
-            if equipment_part and any(
-                keyword in equipment_part for keyword in NON_HUMAN_PART_KEYWORDS
-            ):
-                continue
+
             armor_type = clothing_info.get("armor_type")
 
             display_name = localization.get(
@@ -431,6 +457,7 @@ def collect_wearables(game_root: Path, localization: Dict[str, str]) -> List[Dic
                 # Expose the readable clothing identifier (e.g., Cap05_m07) in item_id.
                 "item_id": display_identifier or uuid,
                 "category": elem.tag,
+                "is_quest_item": is_quest_item,
                 "stab_defense": int(round(stab)),
                 "slash_defense": int(round(slash)),
                 "blunt_defense": int(round(blunt)),
@@ -525,7 +552,9 @@ def main() -> None:
     args = parser.parse_args()
 
     localization = load_localization(args.game_root)
-    items = collect_wearables(args.game_root, localization)
+    item_files = discover_item_files(args.game_root)
+    print(f"Scanning {len(item_files)} wearable table(s).")
+    items = collect_wearables(args.game_root, localization, item_files)
     write_seed(items)
 
     icon_ids = [item["icon_id"] for item in items]

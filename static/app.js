@@ -324,6 +324,7 @@ const state = {
   openSubcategories: new Set(),
   openVariants: new Set(),
   hidePlaceholders: true,
+  hideQuestItems: true,
 };
 
 const searchInput = document.getElementById("searchInput");
@@ -333,6 +334,7 @@ const sortButtons = document.querySelectorAll("button[data-sort]");
 const hidePlaceholderToggle = document.getElementById(
   "hidePlaceholderToggle"
 );
+const hideQuestToggle = document.getElementById("hideQuestToggle");
 
 let debounceTimer = null;
 
@@ -344,6 +346,8 @@ const isPlaceholderItem = (item) => {
     name.includes(PLACEHOLDER_NAME)
   );
 };
+
+const isQuestItem = (item) => Boolean(item.is_quest_item);
 
 const formatNumber = (value) => (typeof value === "number" ? value : "-");
 
@@ -437,18 +441,19 @@ const renderRows = (items) => {
   state.items = items;
 
   let workingItems = [];
-  let hiddenCount = 0;
-  if (state.hidePlaceholders) {
-    items.forEach((item) => {
-      if (isPlaceholderItem(item)) {
-        hiddenCount += 1;
-      } else {
-        workingItems.push(item);
-      }
-    });
-  } else {
-    workingItems = [...items];
-  }
+  let placeholderHidden = 0;
+  let questHidden = 0;
+  items.forEach((item) => {
+    if (state.hidePlaceholders && isPlaceholderItem(item)) {
+      placeholderHidden += 1;
+      return;
+    }
+    if (state.hideQuestItems && isQuestItem(item)) {
+      questHidden += 1;
+      return;
+    }
+    workingItems.push(item);
+  });
 
   const grouped = groupItems(workingItems);
   const orderedCategories = [
@@ -559,7 +564,16 @@ const renderRows = (items) => {
           itemRow.dataset.parent = variantKey;
 
           itemRow.appendChild(createIconCell(item));
-          itemRow.appendChild(createValueCell(item.name, "item-name"));
+          const nameCell = document.createElement("td");
+          nameCell.className = "item-name";
+          nameCell.textContent = item.name;
+          if (isQuestItem(item)) {
+            const questBadge = document.createElement("span");
+            questBadge.className = "item-pill quest-pill";
+            questBadge.textContent = "Quest item";
+            nameCell.appendChild(questBadge);
+          }
+          itemRow.appendChild(nameCell);
           itemRow.appendChild(createValueCell(formatNumber(item.stab_defense)));
           itemRow.appendChild(
             createValueCell(formatNumber(item.slash_defense))
@@ -588,8 +602,11 @@ const renderRows = (items) => {
     statusMessage.textContent = "No items found. Try a different search.";
   } else {
     const parts = [`${workingItems.length} item(s) loaded`];
-    if (state.hidePlaceholders && hiddenCount > 0) {
-      parts.push(`${hiddenCount} hidden`);
+    if (state.hidePlaceholders && placeholderHidden > 0) {
+      parts.push(`${placeholderHidden} NPC item(s) hidden`);
+    }
+    if (state.hideQuestItems && questHidden > 0) {
+      parts.push(`${questHidden} quest item(s) hidden`);
     }
     statusMessage.textContent = parts.join(", ");
   }
@@ -665,6 +682,14 @@ if (hidePlaceholderToggle) {
   hidePlaceholderToggle.checked = state.hidePlaceholders;
   hidePlaceholderToggle.addEventListener("change", (event) => {
     state.hidePlaceholders = event.target.checked;
+    renderRows(state.items);
+  });
+}
+
+if (hideQuestToggle) {
+  hideQuestToggle.checked = state.hideQuestItems;
+  hideQuestToggle.addEventListener("change", (event) => {
+    state.hideQuestItems = event.target.checked;
     renderRows(state.items);
   });
 }

@@ -21,7 +21,7 @@
             Stats shown are the base values pulled from the game files (full condition, no perk/layer modifiers). The in-game UI may display different numbers once bonuses or wear are applied. Only Henry-wearable armour/clothing is listed (quest props, animal gear, and female-only outfits are excluded).
           </p>
           <p class="stats-note">
-            The catalogue surfaces every wearable entry found in the game's data (including NPC-only garments), so a few pieces may not rig or animate perfectly on Henry's model. Those items are hidden by default with "Hide NPC items"
+            The catalogue surfaces every wearable entry found in the game's data (including NPC-only garments and quest props), so a few pieces may not rig or animate perfectly on Henry's model. NPC placeholders and quest rewards are hidden by default via the toggles below.
           </p>
           <div class="hero-search">
             <input
@@ -36,6 +36,10 @@
               <label class="filter-toggle" for="hidePlaceholderToggle">
                 <input type="checkbox" id="hidePlaceholderToggle" checked />
                 <span>Hide NPC items</span>
+              </label>
+              <label class="filter-toggle" for="hideQuestToggle">
+                <input type="checkbox" id="hideQuestToggle" checked />
+                <span>Hide quest items</span>
               </label>
             </div>
           </div>

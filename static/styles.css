@@ -280,6 +280,26 @@ tbody tr:hover {
   font-weight: 600;
 }
 
+.item-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border-radius: 999px;
+  border: 1px solid #3c425a;
+  padding: 0.1rem 0.5rem;
+  margin-left: 0.5rem;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.quest-pill {
+  color: #f3d27b;
+  border-color: #6d572d;
+  background: rgba(243, 210, 123, 0.15);
+}
+
 .status {
   margin-top: 0.75rem;
   color: #8b96b8;

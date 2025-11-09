@@ -15,6 +15,10 @@ class ItemBase(SQLModel):
         index=True,
         description="In-game UUID or code used with cheat commands.",
     )
+    is_quest_item: bool = Field(
+        default=False,
+        description="True if the item is flagged as a quest item in the game data.",
+    )
     category: str = Field(
         default="armour",
         description="Item category such as armour or clothing.",
