@@ -61,7 +61,7 @@ Visit `http://localhost:8000` for the UI and `http://localhost:8000/docs` for th
    python -m app.seed
    ```
 
-The script produces ~2.7k catalogue rows and ~2.3k PNG icons under `static/icons/`, falling back to `_missing.png` if the engine uses placeholder art.
+The script produces ~2.7k catalogue rows and ~2.3k PNG icons under `static/icons/`, falling back to `_missing.png` if the engine uses placeholder art. Because every wearable entry extracted from the game files (including NPC-only outfits) is listed, some pieces may not rig or animate correctly on Henry's player model.
 
 
 ### Quick refresh & run

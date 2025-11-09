@@ -64,6 +64,9 @@ SLOT_CATEGORY_MAP = {
     "Coif": ("head", "coif"),
     "Collar": ("head", "collar"),
     "Cap": ("head", "other"),
+    "Gauntlets": ("arms", "gloves"),
+    "Gauntlet": ("arms", "gloves"),
+    "Caparison": ("body", "coat"),
     "Helmet": ("head", "helmet"),
     "Hood": ("head", "hood"),
     "Necklace": ("head", "necklace"),
@@ -80,6 +83,10 @@ SLOT_CATEGORY_MAP = {
     "LegArmor": ("legs", "cuisses"),
     "Boot": ("legs", "shoes"),
     "Spur": ("legs", "spurs"),
+}
+
+SLOT_CATEGORY_LOOKUP = {
+    key.lower(): value for key, value in SLOT_CATEGORY_MAP.items()
 }
 
 ARMOR_TYPE_OVERRIDES = {
@@ -198,7 +205,7 @@ def classify_by_name(elem, display_name: str) -> Tuple[str, str]:
         return "legs", "cuisses"
     if _contains(base_text, ["spur", "spurs"]):
         return "legs", "spurs"
-    if _contains(base_text, ["shoe", "boot", "sandal", "sabatons"]):
+    if _contains(base_text, ["shoe", "shoes", "boot", "boots", "sandal", "sandals", "sabatons"]):
         lady_words = ["lady", "women", "woman", "dame", "female", "princess"]
         if _contains(base_text, lady_words):
             return "legs", "ladies shoes"
@@ -298,7 +305,7 @@ def load_armor_type_slots(game_root: Path) -> Dict[str, Dict[str, str]]:
 def slot_to_category(slot_name: str | None) -> Tuple[str | None, str | None]:
     if not slot_name:
         return None, None
-    return SLOT_CATEGORY_MAP.get(slot_name, (None, None))
+    return SLOT_CATEGORY_LOOKUP.get(slot_name.strip().lower(), (None, None))
 
 
 def part_to_category(part: str | None) -> Tuple[str | None, str | None]:
@@ -358,6 +365,15 @@ def collect_wearables(game_root: Path, localization: Dict[str, str]) -> List[Dic
             if clothing_name and clothing_name.lower().startswith("f_"):
                 continue
             clothing_info = clothing_metadata.get(clothing_name or "", {})
+            first_identifier = ""
+            identifier_tokens: List[str] = []
+            if clothing_name:
+                lowered = clothing_name.lower()
+                if "caparison" in lowered or "chanfron" in lowered:
+                    continue
+                first_segment = clothing_name.split("_")[0]
+                first_identifier = re.sub(r"\d+$", "", first_segment) or first_segment
+                identifier_tokens = _extract_identifier_tokens(first_identifier)
             equipment_part = clothing_info.get("equipment_part")
             if equipment_part and any(
                 keyword in equipment_part for keyword in NON_HUMAN_PART_KEYWORDS
@@ -372,6 +388,16 @@ def collect_wearables(game_root: Path, localization: Dict[str, str]) -> List[Dic
                 display_name = "A suspicious bag"
 
             slot_category = slot_subcategory = None
+            if identifier_tokens:
+                for token in identifier_tokens:
+                    prefix_category, prefix_subcategory = slot_to_category(token)
+                    if prefix_category:
+                        slot_category, slot_subcategory = prefix_category, prefix_subcategory
+                        break
+            if not slot_category and first_identifier:
+                prefix_category, prefix_subcategory = slot_to_category(first_identifier)
+                if prefix_category:
+                    slot_category, slot_subcategory = prefix_category, prefix_subcategory
             if armor_type:
                 slot_entry = armor_type_slots.get(armor_type.lower())
                 if slot_entry:
