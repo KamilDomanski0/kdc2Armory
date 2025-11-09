@@ -102,8 +102,30 @@ PART_CATEGORY_MAP = {
 }
 
 
+TOKEN_PRIORITY_RULES = [
+    ("body", "waffenrock", ("waffenrock",)),
+    ("arms", "gloves", ("glove", "gauntlet", "mitt", "mitten", "handwrap")),
+    ("arms", "sleeved", ("sleeve", "vambrace", "bracer", "armguard")),
+    ("arms", "ring", ("ring", "signet", "band")),
+]
+
+
 def _contains(text: str, keywords: Iterable[str]) -> bool:
     return any(word in text for word in keywords)
+
+
+def _extract_identifier_tokens(identifier: str) -> List[str]:
+    tokens: List[str] = []
+    for part in identifier.split("_"):
+        tokens.extend(re.findall(r"[a-z]+", part.lower()))
+    return tokens
+
+
+def _match_token_priority(token: str) -> Tuple[str | None, str | None]:
+    for category, subcategory, keywords in TOKEN_PRIORITY_RULES:
+        if _contains(token, keywords):
+            return category, subcategory
+    return None, None
 
 
 def classify_by_name(elem, display_name: str) -> Tuple[str, str]:
@@ -118,6 +140,13 @@ def classify_by_name(elem, display_name: str) -> Tuple[str, str]:
             ],
         )
     ).lower()
+
+    clothing_identifier = (elem.attrib.get("Clothing") or "").lower()
+    tokens = _extract_identifier_tokens(clothing_identifier)
+    for token in tokens:
+        category, subcategory = _match_token_priority(token)
+        if category:
+            return category, subcategory
 
     tag = elem.tag.lower()
 
@@ -158,7 +187,9 @@ def classify_by_name(elem, display_name: str) -> Tuple[str, str]:
         return "body", "belt"
     if _contains(base_text, ["dress", "robe", "gown", "habit"]):
         return "body", "dress"
-    if _contains(base_text, ["coat", "gambeson", "doublet", "waffenrock", "tabard", "surcoat", "tunic", "jerkin", "jacket", "cloak"]):
+    if _contains(base_text, ["waffenrock"]):
+        return "body", "waffenrock"
+    if _contains(base_text, ["coat", "gambeson", "doublet", "tabard", "surcoat", "tunic", "jerkin", "jacket", "cloak"]):
         return "body", "coat"
     if _contains(base_text, ["chainmail", "chain mail", "hauberk", "mailshirt", "mail coat"]):
         return "body", "chainmail"
@@ -316,6 +347,8 @@ def collect_wearables(game_root: Path, localization: Dict[str, str]) -> List[Dic
             display_name = localization.get(
                 ui_name_key, elem.attrib.get("Name", "Unknown")
             )
+            if display_name.strip().lower() == "podezřelý váček":
+                display_name = "A suspicious bag"
 
             slot_category = slot_subcategory = None
             if armor_type:

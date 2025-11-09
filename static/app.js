@@ -8,7 +8,7 @@ const CATEGORY_LABELS = {
 };
 const SUBCATEGORY_ORDER = {
   head: ["cap", "helmet", "coif", "hood", "collar"],
-  body: ["tunic", "gambeson", "chainmail", "plate", "coat"],
+  body: ["tunic", "gambeson", "chainmail", "plate", "coat", "waffenrock"],
   hands: ["sleeves", "gloves"],
   legs: ["hose", "padded hose", "cuisses", "shoes", "spurs"],
   jewelry: ["ring", "necklace"],
@@ -24,6 +24,7 @@ const SUBCATEGORY_LABELS = {
   chainmail: "Chainmail",
   plate: "Plate",
   coat: "Coat",
+  waffenrock: "Waffenrock",
   sleeves: "Sleeves",
   gloves: "Gloves",
   hose: "Hose",
