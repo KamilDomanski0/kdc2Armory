@@ -56,3 +56,23 @@ def ensure_item_columns() -> None:
             connection.execute(
                 text("ALTER TABLE item ADD COLUMN is_quest_item BOOLEAN DEFAULT 0")
             )
+        if "courage" not in columns:
+            connection.execute(
+                text("ALTER TABLE item ADD COLUMN courage REAL DEFAULT 0.0")
+            )
+        if "capacity" not in columns:
+            connection.execute(
+                text("ALTER TABLE item ADD COLUMN capacity REAL DEFAULT 0.0")
+            )
+        if "stamina" not in columns:
+            connection.execute(
+                text("ALTER TABLE item ADD COLUMN stamina REAL DEFAULT 0.0")
+            )
+        if "speed" not in columns:
+            connection.execute(
+                text("ALTER TABLE item ADD COLUMN speed REAL DEFAULT 0.0")
+            )
+        if "price" not in columns:
+            connection.execute(
+                text("ALTER TABLE item ADD COLUMN price INTEGER DEFAULT NULL")
+            )

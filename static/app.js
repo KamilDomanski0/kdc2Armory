@@ -36,15 +36,58 @@ const SUBCATEGORY_LABELS = {
   necklace: "Necklace",
 };
 
-const TOTAL_COLUMNS = 11;
+const HORSE_CATEGORY_ORDER = ["torso", "bridle", "saddle", "horseshoe", "chanfron"];
+const HORSE_CATEGORY_LABELS = {
+  torso: "Torso",
+  bridle: "Bridle",
+  saddle: "Saddle",
+  horseshoe: "Horseshoe",
+  chanfron: "Chanfron",
+};
+
+const ARMOR_TABLE_COLUMNS = [
+  { id: "icon", label: "Icon", type: "icon" },
+  { id: "name", label: "Name", type: "name", sortable: true, sortKey: "name" },
+  { id: "stab_defense", label: "Stab", type: "number", sortable: true, sortKey: "stab_defense" },
+  { id: "slash_defense", label: "Slash", type: "number", sortable: true, sortKey: "slash_defense" },
+  { id: "blunt_defense", label: "Blunt", type: "number", sortable: true, sortKey: "blunt_defense" },
+  { id: "conspicuousness", label: "Consp.", type: "number", sortable: true, sortKey: "conspicuousness" },
+  { id: "noise", label: "Noise", type: "number", sortable: true, sortKey: "noise" },
+  { id: "visibility", label: "Visibility", type: "number", sortable: true, sortKey: "visibility" },
+  { id: "charisma", label: "Charisma", type: "number", sortable: true, sortKey: "charisma" },
+  { id: "price", label: "Price", type: "number", sortable: true, sortKey: "price" },
+  { id: "item_id", label: "Item ID", type: "text", sortable: true, sortKey: "item_id", className: "item-code" },
+  { id: "alt_id", label: "Alt ID", type: "text", className: "alt-id" },
+];
+
+const HORSE_TABLE_COLUMNS = [
+  { id: "icon", label: "Icon", type: "icon" },
+  { id: "name", label: "Name", type: "name", sortable: true, sortKey: "name" },
+  { id: "slash_defense", label: "Slash", type: "number", sortable: true, sortKey: "slash_defense" },
+  { id: "stab_defense", label: "Stab", type: "number", sortable: true, sortKey: "stab_defense" },
+  { id: "blunt_defense", label: "Blunt", type: "number", sortable: true, sortKey: "blunt_defense" },
+  { id: "courage", label: "Courage", type: "number", sortable: true, sortKey: "courage" },
+  { id: "capacity", label: "Capacity", type: "number", sortable: true, sortKey: "capacity" },
+  { id: "stamina", label: "Stamina", type: "number", sortable: true, sortKey: "stamina" },
+  { id: "speed", label: "Speed", type: "number", sortable: true, sortKey: "speed" },
+  { id: "price", label: "Price", type: "number", sortable: true, sortKey: "price" },
+  { id: "item_id", label: "Item ID", type: "text", sortable: true, sortKey: "item_id", className: "item-code" },
+  { id: "alt_id", label: "Alt ID", type: "text", className: "alt-id" },
+];
+
 const NUMERIC_FIELDS = new Set([
-  'stab_defense',
-  'slash_defense',
-  'blunt_defense',
-  'conspicuousness',
-  'noise',
-  'visibility',
-  'charisma',
+  "stab_defense",
+  "slash_defense",
+  "blunt_defense",
+  "conspicuousness",
+  "noise",
+  "visibility",
+  "charisma",
+  "courage",
+  "capacity",
+  "stamina",
+  "speed",
+  "price",
 ]);
 
 
@@ -58,6 +101,12 @@ const DISALLOWED_ICON_SRCS = new Set([
 
 const PLACEHOLDER_NAME = "a suspicious bag";
 const PLACEHOLDER_ICON_TOKEN = "trafficcone";
+const PLACEHOLDER_REPLACEME = "replaceme.png";
+
+const getCurrentColumns = () =>
+  state?.itemType === "horse" ? HORSE_TABLE_COLUMNS : ARMOR_TABLE_COLUMNS;
+
+const getColumnCount = () => getCurrentColumns().length;
 
 const EXCLUDED_SUBCATEGORIES = new Set(["belt"]);
 const HEAD_HELMET_KEYWORDS = [
@@ -116,6 +165,7 @@ const BODY_GAMBESON_KEYWORDS = [
   "quilted",
   "stuffed",
   "arming coat",
+  "caftan",
 ];
 const BODY_COAT_KEYWORDS = [
   "coat",
@@ -272,6 +322,13 @@ const deriveDisplaySlot = (item) => {
     };
   }
 
+  if (normalizedCategory === "horse") {
+    return {
+      category: "horse",
+      subcategory: normalizedSubcat || "torso",
+    };
+  }
+
   return null;
 };
 
@@ -315,26 +372,51 @@ const getItemIconCandidates = (item) => [
   item.icon,
 ];
 
+function defaultTabPreferences() {
+  return {
+    search: "",
+    hidePlaceholders: true,
+    hideQuestItems: true,
+    hideNoPrice: false,
+  };
+}
+
+const tabPreferences = new Map();
+
+function ensureTabPreferences(tab) {
+  if (!tabPreferences.has(tab)) {
+    tabPreferences.set(tab, defaultTabPreferences());
+  }
+  return tabPreferences.get(tab);
+}
+
 const state = {
   search: "",
   sort: "name",
   direction: "asc",
+  itemType: "armor",
   items: [],
   openCategories: new Set(),
   openSubcategories: new Set(),
   openVariants: new Set(),
   hidePlaceholders: true,
   hideQuestItems: true,
+  hideNoPrice: false,
+  selectedAltId: "",
 };
 
+const tableHeadRow = document.querySelector("thead tr");
 const searchInput = document.getElementById("searchInput");
 const itemsBody = document.getElementById("itemsBody");
 const statusMessage = document.getElementById("statusMessage");
-const sortButtons = document.querySelectorAll("button[data-sort]");
 const hidePlaceholderToggle = document.getElementById(
   "hidePlaceholderToggle"
 );
 const hideQuestToggle = document.getElementById("hideQuestToggle");
+const hideNoPriceToggle = document.getElementById("hideNoPriceToggle");
+const tabButtons = document.querySelectorAll(".hero-tab");
+const copyCheatButton = document.getElementById("copyCheatButton");
+let selectedRowElement = null;
 
 let debounceTimer = null;
 
@@ -343,6 +425,7 @@ const isPlaceholderItem = (item) => {
   const name = (item.name || "").toLowerCase();
   return (
     iconPath.includes(PLACEHOLDER_ICON_TOKEN) ||
+    iconPath.endsWith(PLACEHOLDER_REPLACEME) ||
     name.includes(PLACEHOLDER_NAME)
   );
 };
@@ -373,6 +456,22 @@ const createIconCell = (item) => {
   img.src = item.icon;
   img.alt = item.name;
   img.loading = "lazy";
+  const command = buildCheatCommand(item);
+  if (command) {
+    img.classList.add("copyable-icon");
+    img.title = `Copy: ${command}`;
+    img.addEventListener("click", (event) => {
+      event.stopPropagation();
+      const row = event.currentTarget.closest("tr");
+      if (row) {
+        handleRowSelection(row, item);
+      } else {
+        state.selectedAltId = item.alt_id || item.item_id || "";
+        updateCopyButton();
+      }
+      copyCheatCommand(command);
+    });
+  }
   img.onerror = () => {
     img.src = "/static/icons/_missing.png";
   };
@@ -389,6 +488,172 @@ const createValueCell = (value, className) => {
   return td;
 };
 
+const createNameCell = (item) => {
+  const td = document.createElement("td");
+  td.className = "item-name";
+  td.textContent = item.name;
+  if (isQuestItem(item)) {
+    const questBadge = document.createElement("span");
+    questBadge.className = "item-pill quest-pill";
+    questBadge.textContent = "Quest item";
+    td.appendChild(questBadge);
+  }
+  return td;
+};
+
+const appendDataCells = (row, item) => {
+  const columns = getCurrentColumns();
+  columns.forEach((column) => {
+    if (column.type === "icon") {
+      row.appendChild(createIconCell(item));
+      return;
+    }
+    if (column.type === "name") {
+      row.appendChild(createNameCell(item));
+      return;
+    }
+    if (column.type === "number") {
+      row.appendChild(
+        createValueCell(formatNumber(item[column.id]), column.className)
+      );
+      return;
+    }
+    row.appendChild(
+      createValueCell(item[column.id] ?? "-", column.className)
+    );
+  });
+};
+
+const buildCheatCommand = (source) => {
+  const altId =
+    typeof source === "string"
+      ? source
+      : (source.alt_id || source.item_id || "").trim();
+  if (!altId) return "";
+  return `wh_cheat_addItem ${altId}`;
+};
+
+const handleRowSelection = (rowElement, item) => {
+  if (selectedRowElement === rowElement) {
+    return;
+  }
+  if (selectedRowElement) {
+    selectedRowElement.classList.remove("selected-row");
+  }
+  selectedRowElement = rowElement;
+  rowElement.classList.add("selected-row");
+  state.selectedAltId = item.alt_id || item.item_id || "";
+  updateCopyButton();
+};
+
+const updateCopyButton = () => {
+  if (!copyCheatButton) return;
+  const hasSelection = Boolean(state.selectedAltId);
+  copyCheatButton.disabled = !hasSelection;
+  copyCheatButton.textContent = hasSelection
+    ? `Copy: ${buildCheatCommand(state.selectedAltId)}`
+    : "Copy cheat command";
+};
+
+const writeToClipboard = async (text) => {
+  if (navigator.clipboard && window.isSecureContext) {
+    await navigator.clipboard.writeText(text);
+    return;
+  }
+  return new Promise((resolve, reject) => {
+    const textarea = document.createElement("textarea");
+    textarea.value = text;
+    textarea.style.position = "fixed";
+    textarea.style.opacity = "0";
+    document.body.appendChild(textarea);
+    textarea.focus();
+    textarea.select();
+    try {
+      const successful = document.execCommand("copy");
+      document.body.removeChild(textarea);
+      if (successful) {
+        resolve();
+      } else {
+        reject(new Error("execCommand failed"));
+      }
+    } catch (err) {
+      document.body.removeChild(textarea);
+      reject(err);
+    }
+  });
+};
+
+const copyCheatCommand = async (command) => {
+  try {
+    await writeToClipboard(command);
+    if (copyCheatButton) {
+      copyCheatButton.textContent = "Copied!";
+      setTimeout(updateCopyButton, 1200);
+    }
+  } catch (err) {
+    console.error("Clipboard error", err);
+    alert(command);
+  }
+};
+
+const copySelectedCheat = () => {
+  if (!state.selectedAltId) return;
+  const command = buildCheatCommand(state.selectedAltId);
+  if (!command) return;
+  copyCheatCommand(command);
+};
+
+const attachSortButtonHandlers = () => {
+  document.querySelectorAll("button[data-sort]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const column = button.dataset.sort;
+      if (state.sort === column) {
+        state.direction = state.direction === "asc" ? "desc" : "asc";
+      } else {
+        state.sort = column;
+        state.direction = "asc";
+      }
+      updateSortIndicators();
+      fetchItems(false);
+    });
+  });
+};
+
+function updateSortIndicators() {
+  document.querySelectorAll("button[data-sort]").forEach((button) => {
+    const indicator = button.querySelector(".sort-indicator");
+    if (indicator) indicator.remove();
+
+    if (button.dataset.sort === state.sort) {
+      const span = document.createElement("span");
+      span.className = "sort-indicator";
+      span.textContent = state.direction === "asc" ? "\u2191" : "\u2193";
+      button.appendChild(span);
+    }
+  });
+}
+
+const buildTableHeader = () => {
+  if (!tableHeadRow) return;
+  const columns = getCurrentColumns();
+  tableHeadRow.innerHTML = "";
+  columns.forEach((column) => {
+    const th = document.createElement("th");
+    if (column.sortable && column.sortKey) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.dataset.sort = column.sortKey;
+      button.textContent = column.label;
+      th.appendChild(button);
+    } else {
+      th.textContent = column.label;
+    }
+    tableHeadRow.appendChild(th);
+  });
+  attachSortButtonHandlers();
+  updateSortIndicators();
+};
+
 const createGroupRow = ({
   label,
   count,
@@ -401,7 +666,7 @@ const createGroupRow = ({
   const tr = document.createElement("tr");
   tr.className = className;
   const td = document.createElement("td");
-  td.colSpan = TOTAL_COLUMNS;
+  td.colSpan = getColumnCount();
   const button = document.createElement("button");
   button.type = "button";
   button.className = "group-toggle";
@@ -439,10 +704,36 @@ const createGroupRow = ({
 const renderRows = (items) => {
   itemsBody.innerHTML = "";
   state.items = items;
+  state.selectedAltId = "";
+  if (selectedRowElement) {
+    selectedRowElement.classList.remove("selected-row");
+    selectedRowElement = null;
+  }
+  updateCopyButton();
 
-  let workingItems = [];
+  const { workingItems, placeholderHidden, questHidden, priceHidden } =
+    filterItemsByToggles(items);
+
+  if (state.itemType === "horse") {
+    renderHorseTable(workingItems);
+  } else {
+    renderArmorTable(workingItems);
+  }
+
+  updateStatusMessage({
+    totalCount: items.length,
+    visibleCount: workingItems.length,
+    placeholderHidden,
+    questHidden,
+    priceHidden,
+  });
+};
+
+const filterItemsByToggles = (items) => {
+  const workingItems = [];
   let placeholderHidden = 0;
   let questHidden = 0;
+  let priceHidden = 0;
   items.forEach((item) => {
     if (state.hidePlaceholders && isPlaceholderItem(item)) {
       placeholderHidden += 1;
@@ -452,15 +743,29 @@ const renderRows = (items) => {
       questHidden += 1;
       return;
     }
+    if (state.hideNoPrice) {
+      const price = item.price;
+      if (
+        price === null ||
+        price === undefined ||
+        Number(price) === 0 ||
+        Number.isNaN(Number(price))
+      ) {
+        priceHidden += 1;
+        return;
+      }
+    }
     workingItems.push(item);
   });
+  return { workingItems, placeholderHidden, questHidden, priceHidden };
+};
 
-  const grouped = groupItems(workingItems);
+const renderArmorTable = (items) => {
+  const grouped = groupItems(items);
   const orderedCategories = [
     ...CATEGORY_ORDER,
     ...Object.keys(grouped).filter((cat) => !CATEGORY_ORDER.includes(cat)),
   ];
-  let visibleCount = 0;
 
   orderedCategories.forEach((category) => {
     const subcats = grouped[category];
@@ -472,7 +777,6 @@ const renderRows = (items) => {
       (acc, entries) => acc + entries.length,
       0
     );
-    visibleCount += catCount;
     const catRow = createGroupRow({
       label: CATEGORY_LABELS[category] ?? category,
       count: catCount,
@@ -521,24 +825,24 @@ const renderRows = (items) => {
         const variantItemIcons = group.items
           .map((item) => item.icon)
           .filter(Boolean);
-        const preferredVariantIcon =
-          variantItemIcons.find(
-            (iconPath) => iconPath && iconPath !== FALLBACK_ICON_SRC
-          ) ||
-          (subIcon && subIcon !== FALLBACK_ICON_SRC ? subIcon : null) ||
-          variantItemIcons[0] ||
-          subIcon ||
-          FALLBACK_ICON_SRC;
-        const variantFallbacks = [
-          ...variantItemIcons.filter((iconPath) => iconPath !== preferredVariantIcon),
-        ];
-        if (subIcon && subIcon !== preferredVariantIcon) {
+        let variantIcon = selectIconFromCandidates(
+          group.items.map(getItemIconCandidates),
+          { allowDisallowedFallback: true }
+        );
+        if (
+          subIcon &&
+          (!variantIcon || variantIcon === FALLBACK_ICON_SRC)
+        ) {
+          variantIcon = subIcon;
+        }
+        const variantFallbacks = [...variantItemIcons];
+        if (subIcon && subIcon !== variantIcon) {
           variantFallbacks.push(subIcon);
         }
         const variantRow = createVariantRow({
           label: group.label,
           count: group.items.length,
-          iconSrc: preferredVariantIcon,
+          iconSrc: variantIcon,
           iconFallbacks: variantFallbacks,
           onClick: () => toggleVariant(variantKey),
           className: [
@@ -562,68 +866,129 @@ const renderRows = (items) => {
             .filter(Boolean)
             .join(" ");
           itemRow.dataset.parent = variantKey;
-
-          itemRow.appendChild(createIconCell(item));
-          const nameCell = document.createElement("td");
-          nameCell.className = "item-name";
-          nameCell.textContent = item.name;
-          if (isQuestItem(item)) {
-            const questBadge = document.createElement("span");
-            questBadge.className = "item-pill quest-pill";
-            questBadge.textContent = "Quest item";
-            nameCell.appendChild(questBadge);
-          }
-          itemRow.appendChild(nameCell);
-          itemRow.appendChild(createValueCell(formatNumber(item.stab_defense)));
-          itemRow.appendChild(
-            createValueCell(formatNumber(item.slash_defense))
+          appendDataCells(itemRow, item);
+          itemRow.addEventListener("click", () =>
+            handleRowSelection(itemRow, item)
           );
-          itemRow.appendChild(
-            createValueCell(formatNumber(item.blunt_defense))
-          );
-          itemRow.appendChild(
-            createValueCell(formatNumber(item.conspicuousness))
-          );
-          itemRow.appendChild(createValueCell(formatNumber(item.noise)));
-          itemRow.appendChild(createValueCell(formatNumber(item.visibility)));
-          itemRow.appendChild(createValueCell(formatNumber(item.charisma)));
-          // Render true item IDs (UUIDs) before alternative asset IDs to keep the table header correct
-          // and ensure copying the "Item ID" value lines up with the backend search implementation.
-          itemRow.appendChild(createValueCell(item.item_id, "item-code"));
-          itemRow.appendChild(createValueCell(item.alt_id, "alt-id"));
-
           itemsBody.appendChild(itemRow);
         });
       });
     });
   });
-
-  if (!items.length) {
-    statusMessage.textContent = "No items found. Try a different search.";
-  } else {
-    const parts = [`${workingItems.length} item(s) loaded`];
-    if (state.hidePlaceholders && placeholderHidden > 0) {
-      parts.push(`${placeholderHidden} NPC item(s) hidden`);
-    }
-    if (state.hideQuestItems && questHidden > 0) {
-      parts.push(`${questHidden} quest item(s) hidden`);
-    }
-    statusMessage.textContent = parts.join(", ");
-  }
 };
 
-const updateSortIndicators = () => {
-  sortButtons.forEach((button) => {
-    const indicator = button.querySelector(".sort-indicator");
-    if (indicator) indicator.remove();
-
-    if (button.dataset.sort === state.sort) {
-      const span = document.createElement("span");
-      span.className = "sort-indicator";
-      span.textContent = state.direction === "asc" ? "\u2191" : "\u2193";
-      button.appendChild(span);
+const groupHorseItems = (items) => {
+  const grouped = {};
+  items.forEach((item) => {
+    const key = (item.slot_subcategory || "torso").toLowerCase();
+    if (!grouped[key]) {
+      grouped[key] = [];
     }
+    grouped[key].push(item);
   });
+  return grouped;
+};
+
+const renderHorseTable = (items) => {
+  const grouped = groupHorseItems(items);
+  const orderedCategories = [
+    ...HORSE_CATEGORY_ORDER,
+    ...Object.keys(grouped).filter(
+      (cat) => !HORSE_CATEGORY_ORDER.includes(cat)
+    ),
+  ];
+
+  orderedCategories.forEach((categoryKey) => {
+    const entries = grouped[categoryKey];
+    if (!entries) return;
+
+    const catId = `horse-${categoryKey}`;
+    const catOpen = state.openCategories.has(catId);
+    const catLabel = HORSE_CATEGORY_LABELS[categoryKey] ?? categoryKey;
+    const catIcon = selectIconFromCandidates(
+      entries.map(getItemIconCandidates)
+    );
+    const catRow = createGroupRow({
+      label: catLabel,
+      count: entries.length,
+      iconSrc: catIcon,
+      iconAlt: `${catLabel} icon`,
+      onClick: () => toggleCategory(catId),
+      className: `group-row category-row ${catOpen ? "expanded" : "collapsed"}`,
+    });
+    itemsBody.appendChild(catRow);
+
+    const variantGroups = buildVariantGroups(entries);
+    variantGroups.forEach((group) => {
+      const variantKey = `${catId}::variant::${group.key}`;
+      const variantOpen = state.openVariants.has(variantKey);
+      const variantItemIcons = group.items
+        .map((item) => item.icon)
+        .filter(Boolean);
+      const variantIcon = selectIconFromCandidates(
+        group.items.map(getItemIconCandidates),
+        { allowDisallowedFallback: true }
+      );
+
+      const variantRow = createVariantRow({
+        label: group.label,
+        count: group.items.length,
+        iconSrc: variantIcon,
+        iconFallbacks: variantItemIcons,
+        onClick: () => toggleVariant(variantKey),
+        className: [
+          "group-row",
+          "variant-row",
+          catOpen ? "" : "hidden-row",
+          variantOpen ? "expanded" : "collapsed",
+        ]
+          .filter(Boolean)
+          .join(" "),
+      });
+      variantRow.dataset.parent = catId;
+      itemsBody.appendChild(variantRow);
+
+      group.items.forEach((item) => {
+        const itemRow = document.createElement("tr");
+        itemRow.className = [
+          "item-row",
+          catOpen && variantOpen ? "" : "hidden-row",
+        ]
+          .filter(Boolean)
+          .join(" ");
+        itemRow.dataset.parent = variantKey;
+        appendDataCells(itemRow, item);
+        itemRow.addEventListener("click", () =>
+          handleRowSelection(itemRow, item)
+        );
+        itemsBody.appendChild(itemRow);
+      });
+    });
+  });
+};
+
+const updateStatusMessage = ({
+  totalCount,
+  visibleCount,
+  placeholderHidden,
+  questHidden,
+  priceHidden,
+}) => {
+  if (!totalCount) {
+    statusMessage.textContent = "No items found. Try a different search.";
+    return;
+  }
+  const parts = [`${visibleCount} item(s) loaded`];
+  if (state.hidePlaceholders && placeholderHidden > 0) {
+    parts.push(`${placeholderHidden} NPC item(s) hidden`);
+  }
+  if (state.hideQuestItems && questHidden > 0) {
+    parts.push(`${questHidden} quest item(s) hidden`);
+  }
+  if (state.hideNoPrice && priceHidden > 0) {
+    parts.push(`${priceHidden} price-less item(s) hidden`);
+  }
+  statusMessage.textContent = parts.join(", ");
 };
 
 const buildQuery = () => {
@@ -631,13 +996,24 @@ const buildQuery = () => {
   if (state.search) params.set("search", state.search);
   params.set("sort", state.sort);
   params.set("direction", state.direction);
+  if (state.itemType === "horse") {
+    params.set("item_type", "horse");
+  } else if (state.itemType === "armor") {
+    params.delete("item_type");
+  } else {
+    params.set("item_type", state.itemType);
+  }
   return params.toString();
 };
 
 const fetchItems = async (resetState = false) => {
   statusMessage.textContent = "Loading items...";
   try {
-    const response = await fetch(`/api/items?${buildQuery()}`);
+    const response = await fetch(`/api/items?${buildQuery()}`, {
+      headers: {
+        "ngrok-skip-browser-warning": "true",
+      },
+    });
     if (!response.ok) {
       throw new Error("Request failed");
     }
@@ -664,17 +1040,22 @@ searchInput.addEventListener("input", (event) => {
   requestItems(true);
 });
 
-sortButtons.forEach((button) => {
+tabButtons.forEach((button) => {
+  if (button.classList.contains("disabled")) return;
   button.addEventListener("click", () => {
-    const column = button.dataset.sort;
-    if (state.sort === column) {
-      state.direction = state.direction === "asc" ? "desc" : "asc";
-    } else {
-      state.sort = column;
-      state.direction = "asc";
-    }
-    updateSortIndicators();
-    fetchItems(false);
+    const selectedTab = button.dataset.tab;
+    if (state.itemType === selectedTab) return;
+    saveTabPreferences(state.itemType);
+    ensureTabPreferences(selectedTab);
+    state.itemType = selectedTab;
+    tabButtons.forEach((btn) => {
+      const isActive = btn.dataset.tab === selectedTab;
+      btn.classList.toggle("active", isActive);
+      btn.setAttribute("aria-selected", isActive ? "true" : "false");
+    });
+    applyTabPreferences(selectedTab);
+    buildTableHeader();
+    requestItems(true);
   });
 });
 
@@ -694,7 +1075,24 @@ if (hideQuestToggle) {
   });
 }
 
-updateSortIndicators();
+if (hideNoPriceToggle) {
+  hideNoPriceToggle.checked = state.hideNoPrice;
+  hideNoPriceToggle.addEventListener("change", (event) => {
+    state.hideNoPrice = event.target.checked;
+    renderRows(state.items);
+  });
+}
+
+if (copyCheatButton) {
+  copyCheatButton.addEventListener("click", copySelectedCheat);
+  updateCopyButton();
+}
+
+ensureTabPreferences("armor");
+ensureTabPreferences("horse");
+applyTabPreferences(state.itemType);
+
+buildTableHeader();
 fetchItems(true);
 
 function toggleCategory(catId) {
@@ -809,7 +1207,7 @@ const createVariantRow = ({
   const tr = document.createElement("tr");
   tr.className = className;
   const td = document.createElement("td");
-  td.colSpan = TOTAL_COLUMNS;
+  td.colSpan = getColumnCount();
   const button = document.createElement("button");
   button.type = "button";
   button.className = "group-toggle variant-toggle";
@@ -844,3 +1242,25 @@ const createVariantRow = ({
 };
 
 
+function saveTabPreferences(tab) {
+  tabPreferences.set(tab, {
+    search: state.search,
+    hidePlaceholders: state.hidePlaceholders,
+    hideQuestItems: state.hideQuestItems,
+    hideNoPrice: state.hideNoPrice,
+  });
+}
+
+function applyTabPreferences(tab) {
+  const prefs = ensureTabPreferences(tab);
+  state.search = prefs.search;
+  state.hidePlaceholders = prefs.hidePlaceholders;
+  state.hideQuestItems = prefs.hideQuestItems;
+  state.hideNoPrice = prefs.hideNoPrice;
+  searchInput.value = state.search;
+  hidePlaceholderToggle.checked = state.hidePlaceholders;
+  hideQuestToggle.checked = state.hideQuestItems;
+  if (hideNoPriceToggle) {
+    hideNoPriceToggle.checked = state.hideNoPrice;
+  }
+}

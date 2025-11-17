@@ -23,6 +23,33 @@
           <p class="stats-note">
             The catalogue surfaces every wearable entry found in the game's data (including NPC-only garments and quest props), so a few pieces may not rig or animate perfectly on Henry's model. NPC placeholders and quest rewards are hidden by default via the toggles below.
           </p>
+          <div class="hero-tabs" role="tablist">
+            <button
+              type="button"
+              class="hero-tab active"
+              data-tab="armor"
+              aria-selected="true"
+            >
+              Armor & Clothing
+            </button>
+            <button
+              type="button"
+              class="hero-tab"
+              data-tab="horse"
+              aria-selected="false"
+            >
+              Horse Armor
+            </button>
+            <button
+              type="button"
+              class="hero-tab disabled"
+              data-tab="weapons"
+              aria-selected="false"
+              disabled
+            >
+              Weapons (soon)
+            </button>
+          </div>
           <div class="hero-search">
             <input
               id="searchInput"
@@ -40,6 +67,10 @@
               <label class="filter-toggle" for="hideQuestToggle">
                 <input type="checkbox" id="hideQuestToggle" checked />
                 <span>Hide quest items</span>
+              </label>
+              <label class="filter-toggle" for="hideNoPriceToggle">
+                <input type="checkbox" id="hideNoPriceToggle" />
+                <span>Hide items without price</span>
               </label>
             </div>
           </div>
@@ -75,6 +106,9 @@
                 </th>
                 <th>
                   <button type="button" data-sort="charisma">Charisma</button>
+                </th>
+                <th>
+                  <button type="button" data-sort="price">Price</button>
                 </th>
                 <th>
                   <button type="button" data-sort="item_id">Item ID</button>

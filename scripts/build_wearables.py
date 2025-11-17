@@ -18,7 +18,7 @@ import shutil
 import zipfile
 from collections import OrderedDict
 from pathlib import Path
-from typing import Dict, Iterable, List, Tuple, Set
+from typing import Dict, Iterable, List, Tuple, Set, Optional
 import xml.etree.ElementTree as ET
 
 from PIL import Image, UnidentifiedImageError
@@ -51,6 +51,18 @@ PLACEHOLDER_ICON = "_missing.png"
 WEARABLE_TAGS = {"Armor", "Helmet", "Hood"}
 WORD_PATTERN = re.compile(r"[A-Za-z']+")
 WEARABLE_CONTENT_TOKENS = ("<Armor", "<Helmet", "<Hood", "Clothing=\"", "Clothing='")
+HORSE_SLOT_KEYWORDS = OrderedDict(
+    [
+        ("bridle", "bridle"),
+        ("saddle", "saddle"),
+        ("caparison", "torso"),
+        ("chanfron", "chanfron"),
+        ("horseshoe", "horseshoe"),
+        ("breeching", "torso"),
+        ("harness", "torso"),
+        ("hamess", "torso"),
+    ]
+)
 
 
 def discover_item_files(game_root: Path) -> List[Path]:
@@ -172,6 +184,14 @@ def _match_token_priority(token: str) -> Tuple[str | None, str | None]:
         if normalized_token in keyword_set:
             return category, subcategory
     return None, None
+
+
+def detect_horse_subcategory(name: str) -> Tuple[bool, str | None]:
+    lower = (name or "").lower()
+    for keyword, subcategory in HORSE_SLOT_KEYWORDS.items():
+        if keyword in lower:
+            return True, subcategory
+    return False, None
 
 
 def classify_by_name(elem, display_name: str) -> Tuple[str, str]:
@@ -384,6 +404,13 @@ def collect_wearables(
             noise = clamp_non_negative(parse_float(elem.attrib.get("Noise")))
             visibility = clamp_non_negative(parse_float(elem.attrib.get("Visibility")))
             charisma = clamp_non_negative(parse_float(elem.attrib.get("Charisma")))
+            price_attr = elem.attrib.get("Price")
+            price_value: Optional[int] = None
+            if price_attr not in (None, ""):
+                try:
+                    price_value = parse_int(price_attr)
+                except ValueError:
+                    price_value = None
 
             clothing_name = elem.attrib.get("Clothing")
             if clothing_name and clothing_name.lower().startswith("f_"):
@@ -393,8 +420,6 @@ def collect_wearables(
             identifier_tokens: List[str] = []
             if clothing_name:
                 lowered = clothing_name.lower()
-                if "caparison" in lowered or "chanfron" in lowered:
-                    continue
                 segments = [seg for seg in clothing_name.split("_") if seg]
                 normalized_segments = [
                     re.sub(r"\d+$", "", segment) or segment for segment in segments
@@ -465,12 +490,26 @@ def collect_wearables(
                 "noise": round(noise, 3),
                 "visibility": round(visibility, 3),
                 "charisma": round(charisma, 3),
+                "courage": 0.0,
+                "capacity": 0.0,
+                "stamina": 0.0,
+                "speed": 0.0,
+                "price": price_value,
                 "slot_category": slot_category,
                 "slot_subcategory": slot_subcategory,
                 # Keep the UUID accessible in alt_id for console commands / debugging.
                 "alt_id": uuid,
                 "alt_group": alt_group or display_identifier or uuid,
             }
+            is_horse_item, horse_subcat = detect_horse_subcategory(display_name)
+            if is_horse_item:
+                record["slot_category"] = "horse"
+                record["slot_subcategory"] = horse_subcat or "torso"
+                record["courage"] = float(record.get("stab_defense", 0) or 0)
+                record["capacity"] = float(record.get("slash_defense", 0) or 0)
+                record["stamina"] = float(record.get("blunt_defense", 0) or 0)
+                record["speed"] = float(record.get("visibility", 0) or 0)
+
             items[uuid] = record
     sorted_items = sorted(items.values(), key=lambda row: row["name"])
     return sorted_items

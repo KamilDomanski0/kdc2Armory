@@ -30,6 +30,21 @@ class ItemBase(SQLModel):
     noise: float = Field(default=0.0, description="Noise score.")
     visibility: float = Field(default=0.0, description="Visibility score.")
     charisma: float = Field(default=0.0, description="Charisma score.")
+    courage: float = Field(
+        default=0.0, description="Courage rating for horse armor."
+    )
+    capacity: float = Field(
+        default=0.0, description="Capacity rating for horse armor."
+    )
+    stamina: float = Field(
+        default=0.0, description="Stamina rating for horse armor."
+    )
+    speed: float = Field(
+        default=0.0, description="Speed rating for horse armor."
+    )
+    price: Optional[int] = Field(
+        default=None, description="Item price in game currency."
+    )
     slot_category: str = Field(
         default="body",
         description="Top-level equipment slot category (head/body/arms/legs).",

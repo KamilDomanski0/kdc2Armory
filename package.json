@@ -1,0 +1,16 @@
+{
+  "name": "kdc2",
+  "version": "1.0.0",
+  "description": "FastAPI service backed by SQLite that exposes every wearable item from Kingdom Come: Deliverance II through:",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "jsdom": "^27.1.0"
+  }
+}

@@ -50,6 +50,11 @@ SORTABLE_FIELDS = {
     "noise": Item.noise,
     "visibility": Item.visibility,
     "charisma": Item.charisma,
+    "courage": Item.courage,
+    "capacity": Item.capacity,
+    "stamina": Item.stamina,
+    "speed": Item.speed,
+    "price": Item.price,
 }
 
 
@@ -57,10 +62,14 @@ SORTABLE_FIELDS = {
 def list_items(
     search: str = Query(
         default="",
-        description="Filter results by name, item id, or category.",
+        description="Filter results by name, item id, category, or slot category.",
     ),
     sort: str = Query(default="name", description="Column to sort by."),
     direction: str = Query(default="asc", pattern="^(asc|desc)$"),
+    item_type: str = Query(
+        default="",
+        description="Filter results by slot category (e.g., horse, body, head).",
+    ),
     session: Session = Depends(get_session),
 ) -> List[Item]:
     if sort not in SORTABLE_FIELDS:
@@ -74,7 +83,12 @@ def list_items(
                 func.lower(Item.name).like(like),
                 func.lower(Item.item_id).like(like),
                 func.lower(Item.category).like(like),
+                func.lower(Item.slot_category).like(like),
             )
+        )
+    if item_type:
+        statement = statement.where(
+            func.lower(Item.slot_category) == item_type.lower()
         )
 
     order_column = SORTABLE_FIELDS[sort]
