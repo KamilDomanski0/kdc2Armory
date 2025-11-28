@@ -26,6 +26,32 @@ class ItemBase(SQLModel):
     stab_defense: int = Field(default=0, description="Stab defense rating.")
     slash_defense: int = Field(default=0, description="Slash defense rating.")
     blunt_defense: int = Field(default=0, description="Blunt defense rating.")
+    stab_damage: float = Field(
+        default=0.0, description="Stab damage rating for weapons."
+    )
+    slash_damage: float = Field(
+        default=0.0, description="Slash damage rating for weapons."
+    )
+    blunt_damage: float = Field(
+        default=0.0, description="Blunt damage rating for weapons."
+    )
+    weapon_defense: float = Field(
+        default=0.0, description="Weapon defense/parry rating."
+    )
+    durability: float = Field(
+        default=0.0, description="Maximum durability value for the item."
+    )
+    reach: float = Field(default=0.0, description="Weapon reach value.")
+    weapon_speed: float = Field(
+        default=0.0, description="Weapon speed/handling rating."
+    )
+    weight: float = Field(default=0.0, description="Item weight.")
+    strength_requirement: float = Field(
+        default=0.0, description="Minimum strength required to wield."
+    )
+    agility_requirement: float = Field(
+        default=0.0, description="Minimum agility required to wield."
+    )
     conspicuousness: float = Field(default=0.0, description="Conspicuousness score.")
     noise: float = Field(default=0.0, description="Noise score.")
     visibility: float = Field(default=0.0, description="Visibility score.")

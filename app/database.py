@@ -76,3 +76,47 @@ def ensure_item_columns() -> None:
             connection.execute(
                 text("ALTER TABLE item ADD COLUMN price INTEGER DEFAULT NULL")
             )
+        if "stab_damage" not in columns:
+            connection.execute(
+                text("ALTER TABLE item ADD COLUMN stab_damage REAL DEFAULT 0.0")
+            )
+        if "slash_damage" not in columns:
+            connection.execute(
+                text("ALTER TABLE item ADD COLUMN slash_damage REAL DEFAULT 0.0")
+            )
+        if "blunt_damage" not in columns:
+            connection.execute(
+                text("ALTER TABLE item ADD COLUMN blunt_damage REAL DEFAULT 0.0")
+            )
+        if "weapon_defense" not in columns:
+            connection.execute(
+                text("ALTER TABLE item ADD COLUMN weapon_defense REAL DEFAULT 0.0")
+            )
+        if "durability" not in columns:
+            connection.execute(
+                text("ALTER TABLE item ADD COLUMN durability REAL DEFAULT 0.0")
+            )
+        if "reach" not in columns:
+            connection.execute(
+                text("ALTER TABLE item ADD COLUMN reach REAL DEFAULT 0.0")
+            )
+        if "weapon_speed" not in columns:
+            connection.execute(
+                text("ALTER TABLE item ADD COLUMN weapon_speed REAL DEFAULT 0.0")
+            )
+        if "weight" not in columns:
+            connection.execute(
+                text("ALTER TABLE item ADD COLUMN weight REAL DEFAULT 0.0")
+            )
+        if "strength_requirement" not in columns:
+            connection.execute(
+                text(
+                    "ALTER TABLE item ADD COLUMN strength_requirement REAL DEFAULT 0.0"
+                )
+            )
+        if "agility_requirement" not in columns:
+            connection.execute(
+                text(
+                    "ALTER TABLE item ADD COLUMN agility_requirement REAL DEFAULT 0.0"
+                )
+            )

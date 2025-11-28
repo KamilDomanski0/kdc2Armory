@@ -2,10 +2,10 @@
 
 FastAPI service backed by SQLite that exposes every wearable item from Kingdom Come: Deliverance II through:
 
-- /api/items - searchable JSON feed (filters + sortable columns for icon, name, item UUID, alternative ID, stab/slash/blunt defence, conspicuousness, noise, visibility, charisma, quest flag).
-- / - lightweight front-end with a search bar, sortable headers, filter toggles, and locally served in-game icons.
-- The UI groups results into collapsible head/body/arms/legs buckets (with per-slot subcategories) and keeps column headers sticky while scrolling large lists. Within each subcategory, items are further grouped into variant sets (sharing the same alternative ID/clothing asset) with their own expandable sections.
-- **Stat note:** values come straight from item.xml (i.e., base stats at 100% condition, without perk/layer/quality modifiers). The numbers shown inside the game UI can differ because the engine applies condition scaling, layering multipliers, and perk bonuses at runtime.
+- /api/items - searchable JSON feed (filters + sortable columns for icon, name, item UUID, alternative ID, stab/slash/blunt defence, conspicuousness, noise, visibility, charisma, horse stats, weapon damage/handling, requirements, and quest flag).
+- / - lightweight front-end with a search bar, sortable headers, filter toggles, locally served in-game icons, and dedicated tabs for armour/clothing, horse tack, and weapons.
+- The UI groups armour results into collapsible head/body/arms/legs buckets (with per-slot subcategories) and keeps column headers sticky while scrolling large lists. Within each subcategory, items are further grouped into variant sets (sharing the same alternative ID/clothing asset) with their own expandable sections. Horse and weapon tabs adopt the same variant grouping, organised by tack slot and weapon type respectively, so collapsing/expanding behaves consistently across all equipment views.
+- **Stat note:** values come straight from item.xml (i.e., base stats at 100% condition, without perk/layer/quality modifiers). Armour rows therefore mirror raw defence/stealth values, horse gear exposes courage/capacity/stamina/speed, and weapons list their slash/stab/blunt damage, durability, reach, handling speed, weight, and STR/AGI requirements. The numbers shown inside the game UI can differ because the engine applies condition scaling, layering multipliers, and perk bonuses at runtime.
 - Only human-wearable items are included; horse tack, animal gear, and female-only clothing (prefixed F_) are filtered out. NPC-only outfits and quest rewards are included for completeness, but both categories can be hidden via the default-on toggles in the UI.
 
 All data and artwork are extracted directly from your installed game files so the catalogue always mirrors the current build.
@@ -29,6 +29,11 @@ cd kdc2
 python -m venv .venv
 .\.venv\Scripts\activate
 pip install -r requirements.txt
+```
+
+Save game data and icons:
+```powershell
+py .\scripts\build_wearables.py --game-root "C:\Program Files (x86)\Steam\steamapps\common\KingdomComeDeliverance2"
 ```
 
 Seed (or re-seed) the DB:
@@ -80,8 +85,13 @@ If Windows reports that `data\items.db` is in use, close any Python/Uvicorn proc
 GET /api/items?search=<text>&sort=<column>&direction=asc|desc
 ```
 
-`sort` accepts: `name`, `item_id`, `stab_defense`, `slash_defense`, `blunt_defense`,
-`conspicuousness`, `noise`, `visibility`, `charisma`.
+`sort` accepts:
+`name`, `item_id`, `stab_defense`, `slash_defense`, `blunt_defense`,
+`stab_damage`, `slash_damage`, `blunt_damage`, `weapon_defense`,
+`durability`, `reach`, `weapon_speed`, `weight`,
+`strength_requirement`, `agility_requirement`,
+`conspicuousness`, `noise`, `visibility`, `charisma`,
+`courage`, `capacity`, `stamina`, `speed`, `price`.
 
 Example:
 

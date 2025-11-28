@@ -75,10 +75,91 @@ const HORSE_TABLE_COLUMNS = [
   { id: "alt_id", label: "Alt ID", type: "text", className: "alt-id" },
 ];
 
+const WEAPON_TABLE_COLUMNS = [
+  { id: "icon", label: "Icon", type: "icon" },
+  { id: "name", label: "Name", type: "name", sortable: true, sortKey: "name" },
+  { id: "slash_damage", label: "Slash", type: "number", sortable: true, sortKey: "slash_damage" },
+  { id: "stab_damage", label: "Stab", type: "number", sortable: true, sortKey: "stab_damage" },
+  { id: "blunt_damage", label: "Blunt", type: "number", sortable: true, sortKey: "blunt_damage" },
+  { id: "weapon_defense", label: "Defense", type: "number", sortable: true, sortKey: "weapon_defense" },
+  { id: "durability", label: "Durability", type: "number", sortable: true, sortKey: "durability" },
+  { id: "reach", label: "Reach", type: "number", sortable: true, sortKey: "reach" },
+  { id: "weapon_speed", label: "Speed", type: "number", sortable: true, sortKey: "weapon_speed" },
+  { id: "weight", label: "Weight", type: "number", sortable: true, sortKey: "weight" },
+  { id: "strength_requirement", label: "STR", type: "number", sortable: true, sortKey: "strength_requirement" },
+  { id: "agility_requirement", label: "AGI", type: "number", sortable: true, sortKey: "agility_requirement" },
+  { id: "price", label: "Price", type: "number", sortable: true, sortKey: "price" },
+  { id: "item_id", label: "Item ID", type: "text", sortable: true, sortKey: "item_id", className: "item-code" },
+  { id: "alt_id", label: "Alt ID", type: "text", className: "alt-id" },
+];
+
+const WEAPON_TYPE_ORDER = [
+  "longsword",
+  "shortsword",
+  "saber",
+  "sword",
+  "axe",
+  "mace",
+  "hammer",
+  "warhammer",
+  "dagger",
+  "polearm",
+  "halberd",
+  "spear",
+  "bow",
+  "crossbow",
+  "shield",
+  "other",
+];
+
+const WEAPON_TYPE_LABELS = {
+  longsword: "Longswords",
+  shortsword: "Shortswords",
+  saber: "Sabers",
+  sword: "Swords",
+  axe: "Axes",
+  mace: "Maces",
+  hammer: "Hammers",
+  warhammer: "War Hammers",
+  dagger: "Daggers",
+  polearm: "Polearms",
+  halberd: "Halberds",
+  spear: "Spears",
+  bow: "Bows",
+  crossbow: "Crossbows",
+  shield: "Shields",
+  other: "Other Weapons",
+};
+
+const WEAPON_KEYWORD_TYPES = [
+  { type: "longsword", keywords: ["longsword", "greatsword", "twohanded sword", "two-handed sword"] },
+  { type: "shortsword", keywords: ["shortsword", "short sword"] },
+  { type: "saber", keywords: ["saber", "sabre"] },
+  { type: "sword", keywords: ["sword"] },
+  { type: "axe", keywords: ["axe", "ax"] },
+  { type: "mace", keywords: ["mace"] },
+  { type: "hammer", keywords: ["hammer", "maul"] },
+  { type: "warhammer", keywords: ["warhammer", "war hammer"] },
+  { type: "dagger", keywords: ["dagger", "knife"] },
+  { type: "polearm", keywords: ["polearm", "poleaxe", "pole axe", "billhook", "bardiche"] },
+  { type: "halberd", keywords: ["halberd"] },
+  { type: "spear", keywords: ["spear", "pike", "lance"] },
+  { type: "bow", keywords: ["bow", "longbow"] },
+  { type: "crossbow", keywords: ["crossbow"] },
+  { type: "shield", keywords: ["shield"] },
+];
+
 const NUMERIC_FIELDS = new Set([
   "stab_defense",
   "slash_defense",
   "blunt_defense",
+  "stab_damage",
+  "slash_damage",
+  "blunt_damage",
+  "weapon_defense",
+  "durability",
+  "reach",
+  "weapon_speed",
   "conspicuousness",
   "noise",
   "visibility",
@@ -87,6 +168,9 @@ const NUMERIC_FIELDS = new Set([
   "capacity",
   "stamina",
   "speed",
+  "weight",
+  "strength_requirement",
+  "agility_requirement",
   "price",
 ]);
 
@@ -103,8 +187,15 @@ const PLACEHOLDER_NAME = "a suspicious bag";
 const PLACEHOLDER_ICON_TOKEN = "trafficcone";
 const PLACEHOLDER_REPLACEME = "replaceme.png";
 
-const getCurrentColumns = () =>
-  state?.itemType === "horse" ? HORSE_TABLE_COLUMNS : ARMOR_TABLE_COLUMNS;
+const getCurrentColumns = () => {
+  if (state?.itemType === "horse") {
+    return HORSE_TABLE_COLUMNS;
+  }
+  if (state?.itemType === "weapon") {
+    return WEAPON_TABLE_COLUMNS;
+  }
+  return ARMOR_TABLE_COLUMNS;
+};
 
 const getColumnCount = () => getCurrentColumns().length;
 
@@ -199,6 +290,53 @@ const buildItemText = (item) =>
 
 const textContainsAny = (text, keywords) =>
   keywords.some((keyword) => text.includes(keyword));
+
+const weaponTextContainsAny = (text, keywords) => {
+  if (!text || !keywords?.length) return false;
+  const tokens = text.match(/[a-z0-9]+/g) || [];
+  return keywords.some((keyword) => {
+    if (!keyword) return false;
+    const normalizedKeyword = normalizeText(keyword).trim();
+    if (!normalizedKeyword) return false;
+    if (normalizedKeyword.includes(" ")) {
+      return text.includes(normalizedKeyword);
+    }
+    return tokens.includes(normalizedKeyword);
+  });
+};
+
+const mapWeaponTypeValue = (value) => {
+  const normalized = normalizeText(value || "").trim();
+  if (!normalized) return "";
+  for (const entry of WEAPON_KEYWORD_TYPES) {
+    if (weaponTextContainsAny(normalized, entry.keywords)) {
+      return entry.type;
+    }
+  }
+  return normalized;
+};
+
+const deriveWeaponType = (item) => {
+  const fromSubcategory = mapWeaponTypeValue(item?.slot_subcategory);
+  if (fromSubcategory) {
+    return fromSubcategory;
+  }
+  const fallback = mapWeaponTypeValue(buildItemText(item));
+  return fallback || "other";
+};
+
+const formatWeaponTypeLabel = (type) => {
+  const normalized = normalizeText(type || "").trim();
+  if (!normalized) return WEAPON_TYPE_LABELS.other;
+  if (WEAPON_TYPE_LABELS[normalized]) {
+    return WEAPON_TYPE_LABELS[normalized];
+  }
+  return normalized
+    .split(" ")
+    .filter(Boolean)
+    .map((segment) => segment.charAt(0).toUpperCase() + segment.slice(1))
+    .join(" ");
+};
 
 const shouldExcludeItem = (item, textOverride) => {
   const normalizedSubcat = (item.slot_subcategory || "").toLowerCase();
@@ -716,6 +854,8 @@ const renderRows = (items) => {
 
   if (state.itemType === "horse") {
     renderHorseTable(workingItems);
+  } else if (state.itemType === "weapon") {
+    renderWeaponsTable(workingItems);
   } else {
     renderArmorTable(workingItems);
   }
@@ -889,6 +1029,18 @@ const groupHorseItems = (items) => {
   return grouped;
 };
 
+const groupWeaponItems = (items) => {
+  const grouped = {};
+  items.forEach((item) => {
+    const type = deriveWeaponType(item);
+    if (!grouped[type]) {
+      grouped[type] = [];
+    }
+    grouped[type].push(item);
+  });
+  return grouped;
+};
+
 const renderHorseTable = (items) => {
   const grouped = groupHorseItems(items);
   const orderedCategories = [
@@ -935,6 +1087,83 @@ const renderHorseTable = (items) => {
         count: group.items.length,
         iconSrc: variantIcon,
         iconFallbacks: variantItemIcons,
+        onClick: () => toggleVariant(variantKey),
+        className: [
+          "group-row",
+          "variant-row",
+          catOpen ? "" : "hidden-row",
+          variantOpen ? "expanded" : "collapsed",
+        ]
+          .filter(Boolean)
+          .join(" "),
+      });
+      variantRow.dataset.parent = catId;
+      itemsBody.appendChild(variantRow);
+
+      group.items.forEach((item) => {
+        const itemRow = document.createElement("tr");
+        itemRow.className = [
+          "item-row",
+          catOpen && variantOpen ? "" : "hidden-row",
+        ]
+          .filter(Boolean)
+          .join(" ");
+        itemRow.dataset.parent = variantKey;
+        appendDataCells(itemRow, item);
+        itemRow.addEventListener("click", () =>
+          handleRowSelection(itemRow, item)
+        );
+        itemsBody.appendChild(itemRow);
+      });
+    });
+  });
+};
+
+const renderWeaponsTable = (items) => {
+  const grouped = groupWeaponItems(items);
+  const orderedTypes = [
+    ...WEAPON_TYPE_ORDER.filter((type) => grouped[type]),
+    ...Object.keys(grouped).filter((type) => !WEAPON_TYPE_ORDER.includes(type)),
+  ];
+
+  orderedTypes.forEach((typeKey) => {
+    const entries = grouped[typeKey];
+    if (!entries) return;
+
+    const catId = `weapon-${typeKey}`;
+    const catOpen = state.openCategories.has(catId);
+    const catLabel = formatWeaponTypeLabel(typeKey);
+    const catIcon = selectIconFromCandidates(
+      entries.map(getItemIconCandidates)
+    );
+
+    const catRow = createGroupRow({
+      label: catLabel,
+      count: entries.length,
+      iconSrc: catIcon,
+      iconAlt: `${catLabel} icon`,
+      onClick: () => toggleCategory(catId),
+      className: `group-row category-row ${catOpen ? "expanded" : "collapsed"}`,
+    });
+    itemsBody.appendChild(catRow);
+
+    const variantGroups = buildVariantGroups(entries);
+    variantGroups.forEach((group) => {
+      const variantKey = `${catId}::variant::${group.key}`;
+      const variantOpen = state.openVariants.has(variantKey);
+      const variantIcon =
+        group.icon && group.icon !== FALLBACK_ICON_SRC ? group.icon : catIcon;
+      const fallbackIcons = [
+        ...group.items.map((item) => item.icon).filter(Boolean),
+      ];
+      if (catIcon && !fallbackIcons.includes(catIcon)) {
+        fallbackIcons.push(catIcon);
+      }
+      const variantRow = createVariantRow({
+        label: group.label,
+        count: group.items.length,
+        iconSrc: variantIcon || FALLBACK_ICON_SRC,
+        iconFallbacks: fallbackIcons,
         onClick: () => toggleVariant(variantKey),
         className: [
           "group-row",
@@ -1090,6 +1319,7 @@ if (copyCheatButton) {
 
 ensureTabPreferences("armor");
 ensureTabPreferences("horse");
+ensureTabPreferences("weapon");
 applyTabPreferences(state.itemType);
 
 buildTableHeader();
